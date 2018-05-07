@@ -1,12 +1,3 @@
-def delete_me(self, target):
-    if not target:
-        return self.user_dir
-    if target[0] is not '/':
-        target = '/' + target
-    if target[-1] is '/':
-        target = target[:-1]
-    return target
-
 def target_format(fn):
     def fix_target(target):
         if target[0] is not '/':
