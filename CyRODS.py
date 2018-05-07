@@ -6,16 +6,6 @@ from irods.exception import DoesNotExist
 from irods.models import Collection, DataObject
 from irods.session import iRODSSession
 
-#print("KW ARGS: {}".format(KWARGS))
-
-#with iRODSSession(**KWARGS) as session:
-    #query = session.query(Collection.name, DataObject.name)
-    #print(session.collections.exists("/iplant/home/sargentl"))
-    # obj = session.data_objects.get("/iplant/home/sargentl")
-    #print("guessing this doesnt happen")
-    #for result in query:
-    #    print('{}/{} id={} size={}'.format(result[Collection.name], result[DataObject.name], result[DataObject.id], result[DataObject.size]))
-
 
 class FileSystemTree():
     def get_tree_r(self, collection):
