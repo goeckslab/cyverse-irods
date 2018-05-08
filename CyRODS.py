@@ -91,16 +91,21 @@ class CyVerseiRODS():
     def walker(self, file_path, disambiguate=False):
         if disambiguate:
             file_path = self.disambiguate_dir(file_path)
+        #print("bork {}".format(local_path))
         ws = walk(file_path)
         dirs = []
         files = []
         for (dpath, unused, fname) in ws:
+            print("{} {} {}".format(dpath, unused, fname))
             dpath = dpath[len(file_path):]
             if dpath and dpath[0] == '/':
                 dpath = dpath[1:]
             # add files to file list
             for f in fname:
-                files.append(dpath + "/" + f)
+                if dpath:
+                    files.append(dpath + "/" + f)
+                else:
+                    files.append(f)
             # add to dirs
             dirs.append(dpath)
         # sort dirs
@@ -120,18 +125,26 @@ class CyVerseiRODS():
                 continue
         print(min_dirs)
         print(files)
+        return (min_dirs, files, file_path)
 
     def recursive_upload(self, file_path, dest):
         file_path = self.disambiguate_dir(file_path)
-        print(file_path)
         if path.isfile(file_path):
-            print("file")
-            #self.file_to_data_object(file_path, dest)
+            #print("gonna put {} in {}".format(file_path, dest))
+            self.file_to_data_object(file_path, dest)
         elif path.isdir(file_path):
-            print("dir")
-            ws = walk(file_path)
-            for (dpath, dname, fname) in ws:
-                print("{} {} {}".format(dpath, dname, fname))
+            dir = '/' + file_path.split('/')[-1] + '/'
+            print("dir: {}".format(dir))
+            dirs, files, local_path = self.walker(file_path)
+            for d in dirs:
+                d_dest = dest + dir + d
+                #print("gonna mkdir {}".format(d_dest))
+                self.make_collection(d_dest)
+            for f in files:
+                f_dest = dest + dir + f
+                f_local = local_path + '/' + f
+                #print("gonna put {} in {}".format(local_path + '/' + f, f_dest))
+                self.file_to_data_object(f_local, f_dest)
         else:
             raise OSError("File/Directory {} not found.".format(file_path))
 
