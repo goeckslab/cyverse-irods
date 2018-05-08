@@ -1,41 +1,11 @@
 from os import environ, makedirs, path, walk
 
-
-from decorators import target_format
 from irods.exception import DoesNotExist
 from irods.models import Collection, DataObject
 from irods.session import iRODSSession
 
+from decorators import target_format
 
-class FileSystemTree():
-    def get_tree_r(self, collection):
-        result = {}
-        result["dir"] = collection.name
-        result["data_objects"] = collection.data_objects
-        result["subdirs"] = []
-        for c in collection.subcollections:
-            result["subdirs"].append(self.get_tree_r(c))
-        return result
-
-    def __init__(self, collection):
-        print("init on {}".format(collection))
-        self.tree = self.get_tree_r(collection)
-
-    def rec_str(self, tree, depth=0):
-        gap = ""
-        nl = "\n"
-        for x in range(depth):
-            gap = gap + "--"
-        result = ""
-        result = result + gap + tree["dir"] + nl
-        for do in tree["data_objects"]:
-            result = result + gap + "=" + do.name + nl
-        for sc in tree["subdirs"]:
-            result = result + self.rec_str(sc, depth+1)
-        return result
-
-    def __repr__(self):
-        return self.rec_str(self.tree)
 
 class CyVerseiRODS():
     """
