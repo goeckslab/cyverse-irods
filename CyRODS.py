@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+import argparse
 from os import environ, makedirs, path, walk
 
 from irods.exception import DoesNotExist
@@ -7,7 +10,7 @@ from irods.session import iRODSSession
 from decorators import target_format
 
 
-class CyVerseiRODS():
+class CyVerseiRODS:
     """
     A class for interaction with CyVerse via iRODS. User information is taken
     from environment variables:
@@ -31,15 +34,22 @@ class CyVerseiRODS():
     }
 
 
-    def __init__(self):
+    def sense_env(self):
         try:
             for x in self.ENV_INFO:
                 self.KWARGS[self.ENV_INFO[x]] = environ[x]
-            self.user_dir = "/iplant/home/{}".format(self.KWARGS["user"])
         except KeyError as ke:
-            print("KeyError ({}): Required argument absent from environment".format(ke))
+            print("KeyError ({}): Required argument absent".format(ke))
             raise ke
-        #print("KWARGLES {}".format(self.KWARGS))
+
+    def __init__(self, **kwargs):
+        if kwargs and "user" in kwargs and "password" in kwargs:
+            self.KWARGS["user"] = kwargs["user"]
+            self.KWARGS["password"] = kwargs["password"]
+        else:
+            self.sense_env()
+
+        self.user_dir = "/iplant/home/{}".format(self.KWARGS["user"])
         self.session = iRODSSession(**self.KWARGS)
         self.api_colls = self.session.collections
         self.api_data_objs = self.session.data_objects
@@ -61,12 +71,10 @@ class CyVerseiRODS():
     def walker(self, file_path, disambiguate=False):
         if disambiguate:
             file_path = self.disambiguate_dir(file_path)
-        #print("bork {}".format(local_path))
         ws = walk(file_path)
         dirs = []
         files = []
         for (dpath, unused, fname) in ws:
-            print("{} {} {}".format(dpath, unused, fname))
             dpath = dpath[len(file_path):]
             if dpath and dpath[0] == '/':
                 dpath = dpath[1:]
@@ -93,27 +101,21 @@ class CyVerseiRODS():
                 min_dirs.append(da)
             else:
                 continue
-        print(min_dirs)
-        print(files)
         return (min_dirs, files, file_path)
 
     def recursive_upload(self, file_path, dest):
         file_path = self.disambiguate_dir(file_path)
         if path.isfile(file_path):
-            #print("gonna put {} in {}".format(file_path, dest))
             self.file_to_data_object(file_path, dest)
         elif path.isdir(file_path):
             dir = '/' + file_path.split('/')[-1] + '/'
-            print("dir: {}".format(dir))
             dirs, files, local_path = self.walker(file_path)
             for d in dirs:
                 d_dest = dest + dir + d
-                #print("gonna mkdir {}".format(d_dest))
                 self.make_collection(d_dest)
             for f in files:
                 f_dest = dest + dir + f
                 f_local = local_path + '/' + f
-                #print("gonna put {} in {}".format(local_path + '/' + f, f_dest))
                 self.file_to_data_object(f_local, f_dest)
         else:
             raise OSError("File/Directory {} not found.".format(file_path))
@@ -145,16 +147,6 @@ class CyVerseiRODS():
             raise OSError("File {} not found.".format(file_path))
         self.api_data_objs.put(file_path, dest)
 
-    def local_store(self, object, dest):
-        _type = type(object)
-        if _type == iRODSDataObject:
-            print("COLLECTION")
-        elif _type == iRODSDataObject:
-            print("DATA OBJECT")
-        else:
-            print("ERROR: {} given; iRODSCollection or iRODSDataObject required.".format(_type))
-            return None
-
     @target_format
     def get_collections(self, target, target_check=False):
         if target_check:
@@ -169,17 +161,27 @@ class CyVerseiRODS():
                 return None
         return self.api_data_objs.get(target)
 
-    @target_format
-    def ls(self, target):
-        pass
-        # determine if target is data_object or collection
-        #if self.api_data_objs.exists(target):
-        #    return "[Data Object] {}".format(target)
-        #elif not self.api_colls.exists(target):
-        #    raise DoesNotExist("target \"{}\" does not exist".format(target))
-        # is a directory, so we can inspect
-        #coll = self.get_collections(target=target)
-        #for c in coll.subcollections:
-        #    print(c)
-        #for d in coll.data_objects:
-        #    print(d)
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser(description="CyVerse/iRODS interaction")
+    ap.add_argument("--upload", action='store_true')
+    ap.add_argument("--localsource")
+    ap.add_argument("--remotedestination")
+    ap.add_argument("--user")
+    ap.add_argument("--password")
+
+    args = ap.parse_args()
+
+    kwargs = {}
+    if args.user and args.password:
+        kwargs["user"] = args.user
+        kwargs["password"] = args.password
+
+    # initialize connection
+    conn = CyVerseiRODS(**kwargs)
+
+    # upload
+    if args.upload:
+        if args.localsource is None or args.remotedestination is None:
+            parser.error("--upload requires --localsource AND --remotedestination")
+        else:
+            conn.recursive_upload(args.localsource, args.remotedestination)
