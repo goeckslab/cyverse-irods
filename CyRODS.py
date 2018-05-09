@@ -181,7 +181,8 @@ if __name__ == "__main__":
 
     # upload
     if args.upload:
-        if args.localsource is None or args.remotedestination is None:
-            parser.error("--upload requires --localsource AND --remotedestination")
+        if args.localsource is None:
+            parser.error("--upload requires --localsource, --remotedestination optional")
         else:
+            args.remotedestination = conn.user_dir if not args.remotedestination else None
             conn.recursive_upload(args.localsource, args.remotedestination)
