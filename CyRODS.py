@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
+
+from datetime import datetime
 from os import environ, makedirs, path, walk
 
 from irods.exception import DoesNotExist
@@ -168,6 +170,7 @@ if __name__ == "__main__":
     ap.add_argument("--remotedestination")
     ap.add_argument("--user")
     ap.add_argument("--password")
+    ap.add_argument("--timestamp", action='store_true')
 
     args = ap.parse_args()
 
@@ -175,6 +178,13 @@ if __name__ == "__main__":
     if args.user and args.password:
         kwargs["user"] = args.user
         kwargs["password"] = args.password
+
+    # timestamp
+    if args.timestamp or not args.remotedestination:
+        addendum = datetime.utcnow().strftime('_%Y%m%dT%H%M%S')
+        if not args.remotedestination:
+            args.remotedestination = "G-OnRamp_Hub" + addendum
+
 
     # initialize connection
     conn = CyVerseiRODS(**kwargs)
