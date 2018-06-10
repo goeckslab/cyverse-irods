@@ -91,20 +91,21 @@ class CyVerseiRODS:
             dirs.append(dpath)
         # sort dirs
         dirs.sort()
-        min_dirs = []
-        for da in dirs:
-            for db in dirs:
-                skip = False
-                if da == db:
-                    continue
-                if db.startswith(da):
-                    skip = True
-                    break
-            if not skip:
-                min_dirs.append(da)
-            else:
-                continue
-        return (min_dirs, files, file_path)
+        dirs = [d for d in dirs if d != '']
+        # min_dirs = []
+        # for da in dirs:
+        #     for db in dirs:
+        #         skip = False
+        #         if da == db:
+        #             continue
+        #         if db.startswith(da):
+        #             skip = True
+        #             break
+        #     if not skip:
+        #         min_dirs.append(da)
+        #     else:
+        #         continue
+        return (dirs, files, file_path) # used to be min_dirs
 
     def recursive_upload(self, file_path, dest, perm=None):
         file_path = self.disambiguate_dir(file_path)
@@ -118,6 +119,7 @@ class CyVerseiRODS:
             #print(dir)
             dir = "/"
             dirs, files, local_path = self.walker(file_path)
+            print(dirs)
             for d in dirs:
                 d_dest = dest + dir + d
                 print("Collection: {}".format(d_dest))
