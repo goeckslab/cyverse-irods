@@ -10,7 +10,7 @@ from irods.models import Collection, DataObject
 from irods.session import iRODSSession
 from irods.access import iRODSAccess
 
-from decorators import target_format
+from cyverse_irods.decorators import target_format
 
 
 class CyVerseiRODS:
