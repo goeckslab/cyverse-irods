@@ -109,16 +109,23 @@ class CyVerseiRODS:
     def recursive_upload(self, file_path, dest, perm=None):
         file_path = self.disambiguate_dir(file_path)
         if path.isfile(file_path):
+            # create destination collection
+            self.make_collection(dest, perm)
             self.file_to_data_object(file_path, dest, perm)
         elif path.isdir(file_path):
-            dir = '/' + file_path.split('/')[-1] + '/'
+            self.make_collection(dest, perm)
+            #dir = '/' + file_path.split('/')[-1] + '/'
+            #print(dir)
+            dir = "/"
             dirs, files, local_path = self.walker(file_path)
             for d in dirs:
                 d_dest = dest + dir + d
+                print("Collection: {}".format(d_dest))
                 self.make_collection(d_dest, perm)
             for f in files:
                 f_dest = dest + dir + f
                 f_local = local_path + '/' + f
+                print("File: {}".format(f_dest))
                 self.file_to_data_object(f_local, f_dest, perm)
         else:
             raise OSError("File/Directory {} not found.".format(file_path))
@@ -152,7 +159,6 @@ class CyVerseiRODS:
                     dst_f.write(line)
 
     def file_to_data_object(self, file_path, dest, perm=None):
-        print("{}\n{}\n{}\n\n".format(file_path, dest, perm))
         if not path.isfile(file_path):
             raise OSError("File {} not found.".format(file_path))
         if perm and perm["type"] and perm["name"] and perm["zone"]:
